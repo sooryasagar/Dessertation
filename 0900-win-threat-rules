@@ -1,0 +1,12 @@
+<!-- Modify it at your will. -->
+
+<group name="windows,syslog,">
+
+<rule id="99900" level="12">
+        <if_sid>60001</if_sid>
+        <list field="win.eventdata.ipAddress" lookup="address_match_key">etc/lists/IP-blacklist</list>
+        <info>Traffic Detected on Windows from Blacklisted IP</info>
+       <description>Traffic Detected on Windows from Blacklisted IP: $(srcip)</description>
+</rule>
+  
+</group>
