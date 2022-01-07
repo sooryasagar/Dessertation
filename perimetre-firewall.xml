@@ -1,0 +1,208 @@
+<group name="perimter_firewall,">
+  <rule id="901000" level="12">
+    <if_group>Firewall-Configuration-Modified</if_group>
+    <info>Firewall Configuration Modified</info>
+    <description>Firewall Configuration modified by $(source.userid) on $(config.path)</description>
+    <field name="source.userid">admin</field>
+    <group>Security,</group>
+  </rule>
+  <!--Rule Info: Multiple Login Failed -->
+  <rule frequency="5" id="901001" ignore="360" level="12" timeframe="300">
+    <if_matched_group>Firewall-Admin-Authentication-Failed</if_matched_group>
+    <info>Suspicious Login Failed Activity</info>
+      <description>Too many VPN Login failures for user</description>
+    <group>Security,</group>
+  </rule>
+  <!--Rule Info: Brute-Force attack on Admin console -->
+  <rule frequency="100" id="901002" ignore="360" level="12" timeframe="300">
+    <if_matched_group>Firewall-Admin-Authentication-Failed</if_matched_group>
+    <info>Brute Force Attack</info>
+    <description>Possible Brute-Force attack</description>
+    <group>Security,</group>
+  </rule>
+  <!--Rule Info: User Added to Firewall -->
+  <!--Traffic-901010-901040-->
+  <!-- Rule Info: Excessive Traffic Deny from Inside to Internet -->
+  <rule frequency="100" id="901010" ignore="120" level="12" timeframe="120">
+    <if_matched_group>Firewall-Traffic-Denied</if_matched_group>
+    <field name="destination.zone">Internet</field>
+    <same_field>srcip</same_field>
+    <info>Suspicious Traffic Inside-Internet</info>
+    <description>Suspicious Traffic from Inside-Internet</description>
+    <group>Security,</group>
+  </rule>
+  <!--Rule Info: Excessive Traffic denied from Internet to Inside -->
+  <rule frequency="100" id="901011" ignore="120" level="10" timeframe="60">
+    <if_matched_group>Firewall-Traffic-Denied</if_matched_group>
+    <field name="source.zone">Internet</field>
+    <same_field>srcip</same_field>
+    <info>Excessive Traffic Deny Internet-Inside</info>
+    <description>Excessive Traffic Deny Internet-Inside</description>
+    <group>Security,</group>
+  </rule>
+  <!--Rule Info: Traffic Allowed event after Excessive Traffic denies-Possible Compromise -->
+  <rule id="901012" ignore="120" level="12" timeframe="60">
+    <if_matched_sid>901011</if_matched_sid>
+    <if_group>Firewall-Traffic-Allowed</if_group>
+    <same_field>srcip</same_field>
+    <info>Traffic Allowed After Excessive Deny</info>
+    <description>Traffic Allowed Event After Excessive Deny</description>
+    <group>Security,</group>
+  </rule>
+  <!--Rule Info: Traffic Allowed from Blacklisted Country -->
+  <rule id="901013" level="12">
+    <if_group>Firewall-Traffic-Allowed</if_group>
+    <list field="source.network-location" lookup="match_key">etc/lists/blacklisted_countries</list>
+    <info>Suspicious Traffic from Blacklisted Country</info>
+    <description>Suspicious Traffic Allowed from Blacklisted Country $(source.network-location)</description>
+    <group>Security,</group>
+  </rule>
+  <rule id="901014" level="7">
+	 <list field="srcip" lookup="address_match_key">etc/lists/blacklist-alienvault</list>
+	 <info>Traffic Detected from Blacklisted IP</info>
+	<description>Traffic Detected from Blacklisted IP: $(srcip)</description>
+	<group>Security,</group>
+   </rule>
+
+  <!--Rule Info: Traffic Allowed From Blacklisted IP -->
+  <rule id="901015" level="12">
+    <if_group>Firewall-Traffic-Allowed</if_group>
+    <list field="srcip" lookup="address_match_key">etc/lists/blacklist-alienvault</list>
+    <info>Suspicious Traffic from Blacklisted IP</info>
+    <description>Suspicious Traffic Allowed from Blacklisted IP $(srcip)</description>
+    <group>Security,</group>
+  </rule>
+  <rule id="901017" level="12" frequency="10" timeframe="60" ignore="300">
+    <if_matched_sid>900100</if_matched_sid>
+    <same_source_ip/>
+    <different_dstport/>
+    <field name="dst_port">[1-9]|[1-8][0-9]|9[0-9]|[1-8][0-9]{2}|9[0-8][0-9]|99[0-9]|10[01][0-9]|102[0-4]</field>
+    <info>Port Scanning detected</info>
+    <description>Port Scanning detected from IP $(srcip) </description>
+    <group>Security,</group>
+  </rule>
+  <rule frequency="100" id="901018" ignore="120" level="12" timeframe="120">
+    <if_matched_group>Firewall-Traffic-Denied</if_matched_group>
+    <field name="destination.zone">Internet</field>
+    <same_field>srcip</same_field>
+    <info>Suspicious Traffic Inside-Internet</info>
+    <description>Suspicious Traffic from Inside-Internet</description>
+    <group>Security,</group>
+  </rule>
+  <rule id="901019" level="10">
+    <if_sid>901017</if_sid>
+    <srcip>10.2.236.25</srcip>
+    <info>Port Scanning detected</info>
+    <description>Port Scanning detected from IP $(srcip) </description>
+  </rule>
+  <!--Rule Info: Traffic detected on Management Ports from Internet-->
+  <!--
+<rule id="901016" ignore="60" level="9">
+<if_group>Firewall-Traffic-Allowed</if_group>
+<field name="source.zone">Internet</field>
+<field name="dstport">3389|22|23</field>
+<info>Suspicious Traffic on Management Ports from Internet</info>
+<description>Suspicious Traffic on Management Port: $(destination.port)</description>
+<group>Security,</group>
+</rule>
+-->
+  <!--Rule Info: Traffic detected on Blacklisted Ports to Internet-->
+  <!--
+	<rule id="901016" ignore="60" level="9">
+		<if_group>Firewall-Traffic-Allowed</if_group>
+		<field name="destination.zone">Internet</field>
+		<list field="destination.port" lookup="not_match_key">etc/lists/allowed_ports_to_internet</list>
+		<info>Suspicious Traffic to Blacklisted Port</info>
+		<description>Suspicious Traffic Allowed to Blacklisted outbound port: $(destination.port)</description>
+		<group>Security,</group>
+	</rule>
+-->
+  <!--Rule Info: DNS Traffic detected from Non-DNS Servers -->
+  <!--	
+<rule id="901017" ignore="60" level="9">
+		<if_group>Firewall-Traffic-Allowed</if_group>
+		<list field="srcip" lookup="not_address_match_key">etc/lists/admm_dns_servers</list>
+		<field name="destination.zone">Internet</field>
+		<field name="destination.port">53</field>
+		<info>Client connection to Internet DNS server</info>
+		<description>Host $(srcip) connecting to Internet DNS </description>
+		<group>Security,</group>
+	</rule>
+-->
+  <!--VPN-901041-901050-->
+  <!--Rule Info: Multiple VPN Login Failures -->
+  <rule frequency="5" id="901041" ignore="360" level="12" timeframe="300">
+    <if_matched_group>VPN-Login-Failure</if_matched_group>
+    <same_field>destination.userid</same_field>
+    <info>Multiple login Failures for User</info>
+    <description>Multiple Login Failures for User $(destination.userid)</description>
+    <group>Security,</group>
+  </rule>
+  <!--Rule Info: Too Many VPN Login Failures -->
+  <rule frequency="20" id="901042" ignore="120" level="12" timeframe="60">
+    <if_matched_group>VPN-Login-Failure</if_matched_group>
+    <info>Too Many VPN login Failures</info>
+    <description>Too Many VPN Login Failures</description>
+    <group>Security,</group>
+  </rule>
+  <!--Rule Info: VPN Login from Multiple locations in 5 hours -->
+  <rule frequency="2" id="901043" level="12" timeframe="7200">
+    <if_matched_group>VPN-Login-Failure</if_matched_group>
+    <same_field>destination.userid</same_field>
+    <different_srcgeoip/>
+    <info>VPN Login for user from Multiple Locations</info>
+    <description>VPN Login for user $(destination.userid) from Multiple Locations</description>
+    <group>Security,</group>
+  </rule>
+  <!--Rule Info: VPN Login from Blacklisted Country -->
+  <!--THREAT901051-901060-->
+  <!--Rule Info: High-risk Threat url Blocked-->
+  <rule id="901051" level="10">
+    <if_group>Firewall-Threat-URL</if_group>
+    <field name="threat.severity">high|critical</field>
+    <field name="event.action">!alert</field>
+    <info>High Risk Threat Url Blocked</info>
+    <description>High-Risk Threat Url $(threat.url)Blocked</description>
+    <group>Security,</group>
+  </rule>
+  <!--Rule Info: High-risk Threat url Allowed-->
+  <rule id="901052" level="13">
+    <if_group>Firewall-Threat-URL</if_group>
+    <field name="threat.severity">high|critical</field>
+    <field name="event.action">alert</field>
+    <info>High Risk Threat Url Allowed</info>
+    <description>High-Risk Threat Url $(threat.url)Allowed</description>
+    <group>Security,</group>
+  </rule>
+  <!--Rule Info: High Severity threat File event-->
+  <rule id="901053" level="12">
+    <if_group>Firewall-Threat-File</if_group>
+    <field name="threat.severity">high|critical</field>
+    <info>High Risk Threat File Event</info>
+    <description>High-Risk Threat File Event</description>
+    <group>Security,</group>
+  </rule>
+  <!--Rule Info: Vulnerability event-->
+  <rule id="901054" level="7">
+    <if_group>Firewall-Threat-Vulnerability</if_group>
+    <info>Firewall Threat Vulnerability Event</info>
+    <description>Firewall Threat Vulnerability Event</description>
+    <group>Security,</group>
+  </rule>
+  <rule id="901055" level="12">
+    <if_sid>901054</if_sid>
+    <field name="threat.severity" type="pcre2">medium|high|critical</field>
+    <info>Firewall Threat Vulnerability Event</info>
+    <description>High Severity Firewall Vulnerability Event: $(threat.id)</description>
+    <group>Security,</group>
+  </rule>
+  <rule id="901056" level="14">
+    <if_sid>900512</if_sid>
+    <field name="threat.severity" type="pcre2">high|critical</field>
+    <info>Firewall Threat Vulnerability Event</info>
+    <description>High Severity Firewall threat Event: $(threat.id)</description>
+    <group>Security,</group>
+  </rule>
+
+
+</group>
